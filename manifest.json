@@ -1,0 +1,10 @@
+﻿{
+	"name": "bashbouncesurvivor",
+	"version_number": "0.0.0",
+	"website_url": "",
+	"description": "Just 2 little guys.",
+	"dependencies": [
+		"ReturnOfModding-ReturnOfModding-1.1.7",
+		"ReturnsAPI-ReturnsAPI-0.1.45"
+	]
+}
