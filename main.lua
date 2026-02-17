@@ -529,11 +529,11 @@ local initialize = function()
 			if bData.bash then
 				data.buddy:set_default_skill(Skill.Slot.PRIMARY, bashnbounceZ)
 				data.buddy:set_default_skill(Skill.Slot.SECONDARY, bashnbounceX)
-				actor.can_rope = true
+				data.buddy.can_rope = true
 			else
 				data.buddy:set_default_skill(Skill.Slot.PRIMARY, bashnbounceZB)
 				data.buddy:set_default_skill(Skill.Slot.SECONDARY, bashnbounceXB)
-				actor.can_rope = false
+				data.buddy.can_rope = false
 			end
 		else
 			local buddy = oBuddy:create(actor.x, actor.y)
