@@ -248,7 +248,7 @@ local initialize = function()
 		actor.mask_index			= gm.constants.sPMask
 		actor.image_speed = 0.2
         actor.can_jump = true
-		actor.can_rope = true
+		actor.can_rope = false
 		actor.sound_death = gm.constants.wLizardDeath
 		actor.pHmax_base = 2.8
         actor.parent = -4
@@ -520,16 +520,20 @@ local initialize = function()
 			if data.bash then
 				actor:remove_skill_override(Skill.Slot.PRIMARY, bashnbounceZB, 0)
 				actor:remove_skill_override(Skill.Slot.SECONDARY, bashnbounceXB, 0)
+				actor.can_rope = true
 			else
 				actor:add_skill_override(Skill.Slot.PRIMARY, bashnbounceZB, 0)
 				actor:add_skill_override(Skill.Slot.SECONDARY, bashnbounceXB, 0)
+				actor.can_rope = false
 			end
 			if bData.bash then
 				data.buddy:set_default_skill(Skill.Slot.PRIMARY, bashnbounceZ)
 				data.buddy:set_default_skill(Skill.Slot.SECONDARY, bashnbounceX)
+				actor.can_rope = true
 			else
 				data.buddy:set_default_skill(Skill.Slot.PRIMARY, bashnbounceZB)
 				data.buddy:set_default_skill(Skill.Slot.SECONDARY, bashnbounceXB)
+				actor.can_rope = false
 			end
 		else
 			local buddy = oBuddy:create(actor.x, actor.y)
