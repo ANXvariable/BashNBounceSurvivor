@@ -322,9 +322,6 @@ local initialize = function()
 					actor.c_skill = 0
 				end
 				actor.despawn_time = math.huge
-				if Instance.exists(actor.parent) then
-					actor:inventory_items_copy(actor.parent, actor, 64)
-				end
 				local alarm = 15 + math.random(0, 10)
 				if actor.ai_tick_rate then
 					alarm = alarm * actor.ai_tick_rate
