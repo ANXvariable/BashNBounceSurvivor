@@ -354,6 +354,27 @@ local initialize = function()
 				actor:skill_util_reset_activity_state()
 			end
 		end
+		
+		if actor:is_colliding(gm.constants.pGeyser) then
+			if Global.time_stop == 0 and actor.activity ~= 90 and not actor.dead then
+				for _, geyser in ipairs(actor:get_collisions(gm.constants.pGeyser)) do
+					if Global._current_frame > geyser.sound_cd_frame then
+						actor:sound_play_networked(gm.constants.wGeyser, 1, 1, geyser.x, geyser.y)
+						geyser.sound_cd_frame = Global._current_frame + 20
+
+						actor.jumping = true
+						actor.force_jump_held = true
+						actor.pVspeed = -geyser.jump_force
+						actor.jump_count = 0
+					end
+
+					if Net.online then
+						actor:net_send_instance_message(67, actor.value)
+						actor.net_last_position_update = Global._current_frame
+					end
+				end
+			end
+		end
 	end)
 
 	Hook.add_post("gml_Object_oCustomObject_pNPC_Draw_0", function(self, other, result, args)
