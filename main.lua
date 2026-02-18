@@ -253,18 +253,18 @@ local initialize = function()
 		actor.pHmax_base = 2.8
         actor.parent = -4
 		actor.z_range = 80
-		--set default skill TBD
 		actor:set_default_skill(Skill.Slot.PRIMARY, Skill.find("bashnbounceZB"))
 		actor.x_range = 540
 		actor:set_default_skill(Skill.Slot.SECONDARY, Skill.find("bashnbounceXB"))
+		actor:set_default_skill(Skill.Slot.UTILITY, Skill.find("bnbBuddyRecall"))
 		actor.damage_base = 12
 		actor.maxhp_base = 110
 		actor.knockback_cap_base = 42
 		actor.armor_base = 20
 		actor.hp_regen_base = actor.maxhp_base * 0.0002
 		actor.team = 1
-		--actor.tether_range_min = 120
-		--actor.tether_range_max = 600
+		actor.tether_range_min = 120
+		actor.tether_range_max = 960
 		actor.invincible = 5
 		actor:player_survivor_stats_level(3, 32, 0.002, 2)
 		actor.is_character_enemy_targettable = true
@@ -302,7 +302,25 @@ local initialize = function()
 			end
 
 			if math.floor(data.alarm0) == 0 then
-				actor:alarm_ai_default()
+				Util.print(actor:point_distance(actor.x, actor.y, actor.parent.x, actor.parent.y))
+				if Instance.exists(actor.parent)
+				and (actor:point_distance(actor.x, actor.y, actor.parent.x, actor.parent.y) > actor.tether_range_max or math.abs(actor.parent.y - actor.y) > 540)
+				and not actor:actor_state_is_climb_state(actor.parent.actor_state_current_id)
+				and not actor:actor_state_is_climb_state(actor.actor_state_current_id)
+				and not actor.parent.free
+				and actor.parent.activity == 0
+				and actor:skill_can_activate(Skill.Slot.UTILITY)
+				and state == -1 then
+					actor.c_skill = 1
+					Alarm.add(1, function()
+						if Instance.exists(actor) then
+							actor.c_skill = 0
+						end
+					end)
+				else
+					actor:alarm_ai_default()
+					actor.c_skill = 0
+				end
 				actor.despawn_time = math.huge
 				if Instance.exists(actor.parent) then
 					actor:inventory_items_copy(actor.parent, actor, 64)
@@ -472,6 +490,8 @@ local initialize = function()
 	local bashnbounceZB	= Skill.new("bashnbounceZB")
 	local bashnbounceXB	= Skill.new("bashnbounceXB")
 
+	local bnbBuddyRecall = Skill.new("bnbBuddyRecall")
+
     -- Configure icons for each skill
     bashnbounceZ.sprite = sBashNBounceSkills
     bashnbounceZ.subimage = 0
@@ -491,6 +511,10 @@ local initialize = function()
     bashnbounceXB.subimage = 8
 	bashnbounceXB.animation = gm.constants.sLoaderShoot2B
 
+	bnbBuddyRecall.sprite = gm.constants.sHuntressSkills
+	bnbBuddyRecall.subimage = 7
+	bnbBuddyRecall.animation = gm.constants.sImpShoot2
+
     -- Configure damage and cooldown for each skill
     bashnbounceZ.damage = 1.8
     bashnbounceZ.cooldown = 0
@@ -507,6 +531,9 @@ local initialize = function()
     bashnbounceXB.damage = 5
     bashnbounceXB.cooldown = 360
 
+	bnbBuddyRecall.cooldown = 60
+	bnbBuddyRecall.is_utility = true
+
     local statebashnbounceZ		= ActorState.new("bashnbounceZ")
     local statebashnbounceX		= ActorState.new("bashnbounceX")
     local statebashnbounceC		= ActorState.new("bashnbounceC")
@@ -514,6 +541,8 @@ local initialize = function()
 
     local statebashnbounceZB	= ActorState.new("bashnbounceZB")
     local statebashnbounceXB	= ActorState.new("bashnbounceXB")
+	
+    local statebnbBuddyRecall	= ActorState.new("bnbBuddyRecall")
 
     Callback.add(bashnbounceZ.on_activate, function(actor, skill, slot)
         actor:set_state(statebashnbounceZ)
@@ -585,6 +614,16 @@ local initialize = function()
     Callback.add(bashnbounceXB.on_activate, function(actor, skill, slot)
         actor:set_state(statebashnbounceXB)
     end)
+
+	Callback.add(bnbBuddyRecall.on_activate, function(actor, skill, slot)
+		actor.activity = 2
+		actor.activity_type = 1
+		actor:set_state(statebnbBuddyRecall)
+	end)
+
+	Callback.add(bnbBuddyRecall.on_can_activate, function(actor, skill, slot)
+		return true
+	end)
 
 	Callback.add(statebashnbounceZ.on_enter, function(actor, tData)
 		local data = Instance.get_data(actor)
@@ -866,6 +905,35 @@ local initialize = function()
 		local data = Instance.get_data(actor)
 		if Instance.exists(data.reticle) then data.reticle:destroy() end
 		data.x_skill = math.random(1, 180)
+	end)
+
+	Callback.add(statebnbBuddyRecall.on_enter, function(actor, tData)
+		actor.target = -4
+		actor.interrupt_sound = actor:sound_play(gm.constants.wImpShoot2, 1, 1)
+		actor.image_index = 0
+		Instance.get_data(actor).fired = 0
+	end)
+
+	Callback.add(statebnbBuddyRecall.on_step, function(actor, tData)
+		local data = Instance.get_data(actor)
+		actor:skill_util_fix_hspeed()
+		actor:actor_animation_set(bnbBuddyRecall.animation, 0.23, false)
+
+		if data.fired == 0 and actor.image_index >= 2 then
+			data.fired = 1
+			if Instance.exists(actor.parent) and actor:is_authority() then
+				actor:teleport_nearby(actor, actor.parent.x, actor.parent.y, gm.constants.pBlockFloor)
+				actor.xprevious = actor.x
+				actor.yprevious = actor.y
+				actor.ghost_x = actor.x
+				actor.ghost_y = actor.y
+				actor.pHspeed = 0
+				actor.pVspeed = 0
+				actor:net_send_instance_message(47)
+			end
+		end
+
+		actor:skill_util_exit_state_on_anim_end()
 	end)
 
     Callback.add(Callback.ON_STAGE_START, function()
