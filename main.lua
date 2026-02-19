@@ -112,7 +112,7 @@ local initialize = function()
     
     -- Load the common survivor sprites into a table
     local sprites = {
-        idle		= gm.constants.sHuntressIdle,
+        idle		= rapi_sprite("bashIdle", "sBashIdle.png", 5, 13, 15),
         walk		= gm.constants.sHuntressWalk,
         jump		= gm.constants.sHuntressJump,
         jump_peak	= gm.constants.sHuntressJumpPeak,
@@ -221,21 +221,21 @@ local initialize = function()
 		end
 	end)
 
-	oBuddy:set_sprite(sprites.idle)
+	oBuddy:set_sprite(gm.constants.sLoaderIdle)
     Callback.add(oBuddy.on_create, function(actor)
         local data = Instance.get_data(actor)
         --actor:init_actor_default()--is called already by custom object NPC event 15
 		actor.persistent = true
         actor:init_ai_default()
 		actor.is_local = actor.local_client_is_authority
-		actor.sprite_idle_half		= Array.new({sprites.idle, gm.constants.sHuntressIdleHalf, 0})
+		actor.sprite_idle_half		= Array.new({gm.constants.sHuntressIdle, gm.constants.sHuntressIdleHalf, 0})
 		actor.sprite_walk_half		= Array.new({sprites.walk, gm.constants.sHuntressWalkHalf, 0, gm.constants.sHuntressWalkBack})
 		actor.sprite_jump_half		= Array.new({sprites.jump, gm.constants.sHuntressJumpHalf, 0})
 		actor.sprite_jump_peak_half	= Array.new({sprites.jump_peak, gm.constants.sHuntressJumpPeakHalf, 0})
 		actor.sprite_fall_half		= Array.new({sprites.fall, gm.constants.sHuntressFallHalf, 0})
 		actor:survivor_util_init_half_sprites()
-		actor.sprite_spawn			= sprites.idle
-        actor.sprite_idle			= sprites.idle
+		actor.sprite_spawn			= gm.constants.sLoaderIdle
+        actor.sprite_idle			= gm.constants.sLoaderIdle
         actor.sprite_walk			= sprites.walk
         actor.sprite_jump			= sprites.jump
         actor.sprite_jump_peak		= sprites.jump_peak
@@ -519,8 +519,10 @@ local initialize = function()
     bashnbounceX.cooldown = 360
     bashnbounceC.damage = 2
     bashnbounceC.cooldown = 240
+    bashnbounceC.is_utility = true
     bashnbounceV.damage = 1
     bashnbounceV.cooldown = 30
+    bashnbounceV.is_utility = true
 
     bashnbounceZB.damage = 2
     bashnbounceZB.cooldown = 0
@@ -554,13 +556,14 @@ local initialize = function()
         --actor:set_state(statebashnbounceV)
 		local data = Instance.get_data(actor)
 		if Instance.exists(data.buddy) then
-			local bData = Instance.get_data(data.buddy)
+			local buddy = data.buddy
+			local bData = Instance.get_data(buddy)
 
 			local x, y = actor.x, actor.y
-			actor.x = data.buddy.x
-			actor.y = data.buddy.y
-			data.buddy.x = x
-			data.buddy.y = y
+			actor.x = buddy.x
+			actor.y = buddy.y
+			buddy.x = x
+			buddy.y = y
 			data.bash = not data.bash
 			bData.bash = not bData.bash
 
@@ -568,19 +571,23 @@ local initialize = function()
 				actor:remove_skill_override(Skill.Slot.PRIMARY, bashnbounceZB, 0)
 				actor:remove_skill_override(Skill.Slot.SECONDARY, bashnbounceXB, 0)
 				actor.can_rope = true
+				actor.sprite_idle = sprites.idle
 			else
 				actor:add_skill_override(Skill.Slot.PRIMARY, bashnbounceZB, 0)
 				actor:add_skill_override(Skill.Slot.SECONDARY, bashnbounceXB, 0)
 				actor.can_rope = false
+				actor.sprite_idle = gm.constants.sLoaderIdle
 			end
 			if bData.bash then
-				data.buddy:set_default_skill(Skill.Slot.PRIMARY, bashnbounceZ)
-				data.buddy:set_default_skill(Skill.Slot.SECONDARY, bashnbounceX)
-				data.buddy.can_rope = true
+				buddy:set_default_skill(Skill.Slot.PRIMARY, bashnbounceZ)
+				buddy:set_default_skill(Skill.Slot.SECONDARY, bashnbounceX)
+				buddy.can_rope = true
+				buddy.sprite_idle = sprites.idle
 			else
-				data.buddy:set_default_skill(Skill.Slot.PRIMARY, bashnbounceZB)
-				data.buddy:set_default_skill(Skill.Slot.SECONDARY, bashnbounceXB)
-				data.buddy.can_rope = false
+				buddy:set_default_skill(Skill.Slot.PRIMARY, bashnbounceZB)
+				buddy:set_default_skill(Skill.Slot.SECONDARY, bashnbounceXB)
+				buddy.can_rope = false
+				buddy.sprite_idle = gm.constants.sLoaderIdle
 			end
 		else
 			local buddy = oBuddy:create(actor.x, actor.y)
